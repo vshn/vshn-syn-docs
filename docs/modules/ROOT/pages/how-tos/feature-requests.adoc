@@ -1,0 +1,27 @@
+= Feature requests
+
+This how-to explains how VSHNeers can create feature requests for VSHN Products.
+
+== Prerequisites
+
+* Access to https://ticket.vshn.net[ticket.vshn.net]
+
+== Procedure
+
+. Create a new issue in Jira project "VSHN Products Feature Requests" (key `IDEA`)
++
+image::howtos_feature_requests_1a.png[]
+
+. Select issue type "Idea" and click "Next"
++
+image::howtos_feature_requests_1b.png[]
+
+. Select issue template "Idea Issue [VSHN Products Feature Request]
++
+image::howtos_feature_requests_2.png[]
+
+. Follow the instructions in the template to describe your feature request and add relevant links
++
+NOTE: There's no need to set the issue priority, or other fields, simply describing the feature request in the issue "Description" is sufficient.
+
+. Create issue
