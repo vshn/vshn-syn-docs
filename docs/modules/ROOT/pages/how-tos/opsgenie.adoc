@@ -1,12 +1,12 @@
 = Integrating Alertmanager with OpsGenie
 
-This how-to assumes that you're already using OpsGenie.
-It additionally assumes that you're familiar with managing schedules and escalations.
+This document describes how to configure alert forwarding from Alertmanager to OpsGenie at VSHN.
+The how-to assumes that you're familiar with managing schedules and escalations in OpsGenie and that alerts should be delivered to OpsGenie teams.
 
 == Prerequisites
 
-In order to setup Alertmanager integration with OpsGenie, you'll need sufficient permissions in OpsGenie to setup integrations and heartbeats.
-If you're using teams in OpsGenie, request role "admin" in your team to be able to follow along.
+In order to setup integrations and heartbeats in OpsGenie, you'll need role "admin" in your OpsGenie team(s).
+To deploy the changes to the Commodore component, you need to be able to compile catalogs.
 
 == Enabling the integrations in OpsGenie (once per team)
 
