@@ -1,1 +1,2 @@
 * xref:how-tos/feature-requests.adoc[Feature requests]
+* xref:how-tos/opsgenie.adoc[Integrating Alertmanager with OpsGenie]
