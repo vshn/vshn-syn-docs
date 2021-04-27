@@ -1,0 +1,189 @@
+= Synthesize a cluster
+
+:projectsyn-ig: https://vshn.chat/channel/projectsyn-ig[Project Syn IG]
+:portal-lieutenant-tenants: https://control.vshn.net/syn/lieutenanttenants/vshn-lieutenant-prod[control.vshn.net]
+
+TIP: "Synthesize" is the act of making a cluster managed by Project Syn
+
+This how-to will show you how to synthesize a cluster.
+
+== Prerequisites
+
+* `cluster-admin` permissions on the cluster to synthesize.
+* Write access to the Project Syn view on https://control.vshn.net[control.vshn.net]
+
+== Procedure
+
+=== Registering a tenant
+
+. Check whether there's already a Project Syn tenant for the customer whose cluster you're synthesizing on {portal-lieutenant-tenants}.
+If there's already a tenant you can directly skip to <<_registering_a_cluster,registering a cluster>>.
+
+. TODO
+
+=== Registering a cluster
+
+. Create a new cluster in https://control.vshn.net/syn/lieutenantclusters/vshn-lieutenant-prod/_create[control.vshn.net].
+There's quite a few fields to fill out when creating a cluster.
+The list below discusses the contents for each field.
+.. "ID": Choose a unique id for the cluster.
+This field is limited to lower-case characters `a-z`, numbers `0-9` and `-`.
+The length is limited to 1-61 characters.
++
+NOTE: This field cannot be changed after creation, it's used as the Kubernetes object name for the cluster by Lieutenant.
+
+.. "Display Name": Choose a descriptive name.
+Check first on the cluster listing overview how other clusters of the Tenant are named.
+.. "Lieutenant Tenant": Choose the tenant to which this cluster belongs
+.. "Service Level (Fact: service_level)": Check with Service Manager which Service Level applies to this cluster
+.. "Cloud", "Distribution", "Region": Check folders `cloud` and `distribution` in the https://git.vshn.net/syn/commodore-defaults[Commodore defaults repo] for already available values for fields "Cloud" and "Distribution" and "Region".
+Use "Cloud" `none` for on-premise setups.
+Field "Region" is not required to be set for "Cloud" `none`.
+If the cloud, region or distribution don't exist yet in the Commodore defaults repo, you can create the following files:
+
+* For a missing cloud, create file `cloud/<cloudname>.yml` in the repo.
+  If the missing cloud has multiple regions, also create file `cloud/<cloudname>/params.yml` in the repo.
+  For multi-region clouds the file `cloud/<cloudname>.yml` file in the repo should always have exactly the following content:
++
+.<cloud>/cloudname.yml
+[source,yaml]
+----
+classes:
+  - global.cloud.<cloudname>.params
+  - global.cloud.<cloudname>.${facts:region}
+----
+
+* For a missing region, or if you're creating a new multi-region cloud, create file `cloud/<cloudname>/<regionname>.yml` in the repo.
+* For a missing distribution, create file `distribution/<distributionname>.yml` in the repo.
+
+.. "Rancher Cluster ID (Fact: rancher_cluster_id)": If it's a Rancher cluster, add the Cluster ID from the Rancher Management Server to this field
+.. "Repository Type": Leave at "auto" to have Lieutenant manage the cluster catalog repo on https://git.vshn.net
+.. "GitRepo URL": Leave empty if "Repository Type" is auto.
+   Check with the {projectsyn-ig}, if you have special requirements for the cluster catalog repo.
+
++
+[NOTE]
+====
+Not all combinations work smoothly.
+If in doubt, seek help from the {projectsyn-ig}.
+====
+
+. Add initial configuration in the `<cluster-id>.yml` file in the tenant's Project Syn configuration repository (often called the "Syn tenant repo").
+See {portal-lieutenant-tenants} for a list of tenants and their associated configuration repositories.
+
+. Run Commodore to generate the initial cluster catalog.
++
+Grab the Kubeconfig for the {synfra-cluster}
+Then you can setup the environment for Commodore as follows:
++
+[source,bash]
+----
+# Adjust this to point to where you've stored the Kubeconfig file for the Synfra cluster
+export KUBECONFIG=/path/to/synfra.kubeconfig
+export COMMODORE_API_TOKEN=$(kubectl config view -o jsonpath='{.users[?(@.name == "syn-synfra")].user.token}'  --raw)
+export COMMODORE_API_URL="https://api.syn.vshn.net"
+----
++
+Now you can follow the steps in the https://syn.tools/syn/how-tos/compile-catalog.html#_compilation[Project Syn "Compile a catalog" how-to]
+
+. Add required tokens to Vault.
+Check the documentation for the K8s distribution of your cluster for required secrets.
++
+All distributions require tokens for https://k8up.io[K8up] and the https://github.com/projectsyn/component-cluster-backup[cluster-backup] component. Make sure you've got the https://www.vaultproject.io/docs/install[Vault CLI] available locally and run the following commands:
++
+[source,bash]
+----
+export VAULT_ADDR=https://vault-prod.syn.vshn.net
+export TENANT_ID=<tenant id> <1>
+export CLUSTER_ID=<cluster id> <2>
+
+vault login -method=ldap username=<VSHN username> <3>
+
+# Configure global restic password for K8up
+vault kv put -cas=0 clusters/kv/${TENANT_ID}/${CLUSTER_ID}/global-backup password=$(pwgen -s 32 1)
+
+# Configure restic password for cluster backups
+vault kv put -cas=0 clusters/kv/${TENANT_ID}/${CLUSTER_ID}/cluster-backup password=$(pwgen -s 32 1)
+----
+<1> You can find the tenant ID on {portal-lieutenant-tenants}
+<2> The cluster ID which you chose in step 1a
+<3> Your usual VSHN LDAP login, generally `firstname.lastname`
++
+Check tenant-specific documentation for further tokens to configure in Vault.
++
+[NOTE]
+====
+For K8up,  S3 compatible storage is required.
+If the infrastructure does not provide any S3 compatible storage, you need to find an alternative.
+There are several options:
+
+* You can consume S3 storage from a different provider than the one hosting the cluster.
+* You can setup Minio inside the cluster to present an S3-compatible interface backed by a Kubernetes persistent volume.
+There's a https://github.com/projectsyn/component-minio/[Commodore component] for installing Minio.
+====
+
+. Install Steward on the cluster with the install URL displayed in the Portal
++
+CAUTION: Make sure the `kubectl` command in this step is executed against the cluster to synthesize
++
+[source,bash]
+----
+export KUBECONFIG=/path/to/new/cluster.kubeconfig
+kubectl create -f "${INSTALL_URL}"
+----
++
+[NOTE]
+====
+The install URL is only valid once and is only valid for 30 minutes after creating the cluster in Lieutenant.
+You can check the expiration date of the install URL by inspecting the cluster object on the {synfra-cluster}.
+If you don't see a field `.status.bootstrapToken.tokenValid` the token has either been used or has expired.
+
+[source,bash]
+----
+export CLUSTER_ID=<cluster id of cluster to synthesize>
+export KUBECONFIG=/path/to/synfra.kubeconfig
+
+export LIEUTENANT_NS=lieutenant-prod
+
+kubectl -n ${LIEUTENANT_NS} describe cluster ${CLUSTER_ID}
+----
+
+Use the following command to reset the cluster's bootstrap token
+
+[source,bash]
+----
+export CLUSTER_ID=<cluster id of cluster to synthesize>
+export KUBECONFIG=/path/to/synfra.kubeconfig
+
+export LIEUTENANT_NS=lieutenant-prod
+export LIEUTENANT_TOKEN=$(kubectl config view -o jsonpath='{.users[?(@.name == "syn-synfra")].user.token}'  --raw)
+export LIEUTENANT_AUTH="Authorization: Bearer ${LIEUTENANT_TOKEN}"
+
+curl -H "${LIEUTENANT_AUTH}" -H "Content-Type: application/json-patch+json" -X PATCH \
+  -d '[{ "op": "remove", "path": "/status/bootstrapToken" }]' \
+  "https://rancher.vshn.net/k8s/clusters/c-c6j2w/apis/syn.tools/v1alpha1/namespaces/${LIEUTENANT_NS}/clusters/${CLUSTER_ID}/status"
+----
+====
++
+This `kubectl create` command will install Steward on the cluster in the namespace "syn" and Steward will:
+
+* Generate SSH key which is then being used as a deploy key to access the Git repositories managed by the GitRepo objects.
+This SSH key will be sent to the Lieutenant API once generated.
+* Retrieve Git repository URL from Lieutenant
+* Bootstrap Argo CD and generate the "root" Application definition to connect to the GitOps repository
+
++
+[TIP]
+====
+If you don't have the install URL anymore, you can regenerate it with the following commands.
+Don't forget to reset the `KUBECONFIG` environment variable to the cluster to synthesize after regenerating the install URL.
+
+[source,bash]
+----
+export KUBECONFIG=/path/to/synfra.kubeconfig
+export LIEUTENANT_TOKEN=$(kubectl config view -o jsonpath='{.users[?(@.name == "syn-synfra")].user.token}'  --raw)
+export LIEUTENANT_AUTH="Authorization:Bearer ${LIEUTENANT_TOKEN}"
+
+export INSTALL_URL=$(curl -H "${LIEUTENANT_AUTH}" "https://${LIEUTENANT_URL}/clusters/${CLUSTER_ID}" | jq -r ".installURL")
+----
+====
