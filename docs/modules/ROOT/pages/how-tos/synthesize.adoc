@@ -2,6 +2,8 @@
 
 :projectsyn-ig: https://vshn.chat/channel/projectsyn-ig[Project Syn IG]
 :portal-lieutenant-tenants: https://control.vshn.net/syn/lieutenanttenants/vshn-lieutenant-prod[control.vshn.net]
+:git-vshn-net: https://git.vshn.net[git.vshn.net]
+:synfra-cluster: https://rancher.vshn.net/c/c-c6j2w/monitoring[Synfra cluster]
 
 TIP: "Synthesize" is the act of making a cluster managed by Project Syn
 
@@ -10,7 +12,8 @@ This how-to will show you how to synthesize a cluster.
 == Prerequisites
 
 * `cluster-admin` permissions on the cluster to synthesize.
-* Write access to the Project Syn view on https://control.vshn.net[control.vshn.net]
+* Write access in the Project Syn views ("Tenants" and "Clusters") on https://control.vshn.net[control.vshn.net].
+* Access to the {synfra-cluster}.
 
 == Procedure
 
@@ -19,7 +22,71 @@ This how-to will show you how to synthesize a cluster.
 . Check whether there's already a Project Syn tenant for the customer whose cluster you're synthesizing on {portal-lieutenant-tenants}.
 If there's already a tenant you can directly skip to <<_registering_a_cluster,registering a cluster>>.
 
-. TODO
+. Ensure Lieutenant permissions on {git-vshn-net}.
+* The subgroup `cluster-catalogs` exists in the customer's group.
+* Lieutenant (GitLab account `lieutenant-prod`) has owner permissions on the subgroup `cluster-catalogs`.
+* Lieutenant has at least maintainer permissions on the customer's group to create the tenant repository.
+
+. Create tenant on https://control.vshn.net/syn/lieutenanttenants/vshn-lieutenant-prod/_create[control.vshn.net].
+To create the tenant follow the guidelines below regarding the fields to fill out.
+.. "ID": Choose a unique id for the tenant.
+This field is limited to lower-case characters `a-z`, numbers `0-9` and `-`.
+The length is limited to 1-61 characters.
++
+NOTE: This field cannot be changed after creation, it's used as the Kubernetes object name for the tenant by Lieutenant.
+
+.. "Customer": Choose the customer for which you're creating the tenant.
+.. "Odoo Customer for invoicing": Choose the Odoo customer to whom the invoices for this tenant should be sent.
+Usually this will be the same value as field "Customer".
+Check with the Service Manager for the customer which Odoo customer should be billed for the customer's Project Syn clusters.
+
+.. "Repository Type": Choose "auto".
+.. "GitRepo URL": Usually `ssh://git@git.vshn.net/<customer>/syn-tenant-repo.git`.
++
+NOTE: Make sure that the GitLab user `lieutenant-prod` has permissions to create this repository.
+
+.. "GitRepo Revision": can usually be left blank.
+.. "Global GitRepo URL": can usually be left blank.
+.. "Global GitRepo Revision": can usually be left blank.
+
+. Configure the `clusterTemplate` for the tenant.
+Generally you want to execute the following command.
++
+[source,bash]
+----
+export LIEUTENANT_NS=lieutenant-prod
+export TENANT_ID=<tenant id> <1>
+export CUSTOMER_GROUP=<group name> <2>
+kubectl -n ${LIEUTENANT_NS} patch --type=merge tenant ${TENANT_ID} --patch-file /dev/stdin <<EOF
+{
+  "spec": {
+    "clusterTemplate": {
+      "gitRepoTemplate": {
+        "path": "${CUSTOMER_GROUP}/cluster-catalogs",
+        "repoName": "{{ .Name }}",
+        "apiSecretRef": { "name": "vshn-gitlab" }
+      }
+    }
+  }
+}
+EOF
+----
+<1> Tenant ID from step 3
+<2> The group namespace in {git-vshn-net} (the group identifier in the URL)
++
+[NOTE]
+====
+The cluster template reduces the amount of boiler-plate that you have to configure for each cluster belonging to the tenant.
+The patch command given in this step sets default for the following attributes of each cluster's catalog repository:
+
+* `path`: the path in {git-vshn-net} under which to create the catalog repository.
+We set the default value of this attribute to `<customer-group>/cluster-catalogs`.
+* `repoName`: the name of the cluster catalog repository.
+We set the default value of this attribute to a Go template which uses the cluster's name (ID) as the catalog repo name.
+* `apiSecretRef`: the name of the secret holding the API credentials for {git-vshn-net}.
+We use the GitLab user (`lieutenant-prod`) for all tenants.
+This user's credentials are available in the secret named `vshn-gitlab` which we set as the default.
+====
 
 === Registering a cluster
 
@@ -73,7 +140,7 @@ See {portal-lieutenant-tenants} for a list of tenants and their associated confi
 
 . Run Commodore to generate the initial cluster catalog.
 +
-Grab the Kubeconfig for the {synfra-cluster}
+Grab the Kubeconfig for the {synfra-cluster}.
 Then you can setup the environment for Commodore as follows:
 +
 [source,bash]
