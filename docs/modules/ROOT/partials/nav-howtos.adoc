@@ -2,3 +2,4 @@
 * xref:how-tos/opsgenie.adoc[Integrating Alertmanager with OpsGenie]
 * xref:how-tos/synthesize.adoc[Synthesize a cluster]
 * xref:how-tos/create-tenant.adoc[Create a tenant]
+* xref:how-tos/decommission.adoc[Decommission cluster or tenant]
