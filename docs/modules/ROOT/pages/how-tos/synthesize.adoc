@@ -1,9 +1,6 @@
 = Synthesize a cluster
 
-:projectsyn-ig: https://vshn.chat/channel/projectsyn-ig[Project Syn IG]
-:portal-lieutenant-tenants: https://control.vshn.net/syn/lieutenanttenants/vshn-lieutenant-prod[control.vshn.net]
-:git-vshn-net: https://git.vshn.net[git.vshn.net]
-:synfra-cluster: https://rancher.vshn.net/c/c-c6j2w/monitoring[Synfra cluster]
+include::partial$synthesize-macros.adoc[]
 
 TIP: "Synthesize" is the act of making a cluster managed by Project Syn
 
@@ -12,184 +9,40 @@ This how-to will show you how to synthesize a cluster.
 == Prerequisites
 
 * `cluster-admin` permissions on the cluster to synthesize.
-* Write access in the Project Syn views ("Tenants" and "Clusters") on https://control.vshn.net[control.vshn.net].
+* Write access in the Project Syn "Clusters" view on {portal-lieutenant-clusters}.
 * Access to the {synfra-cluster}.
+* The Syn tenant of the cluster to synthesize exists already.
+If the tenant doesn't exist yet, see the documentation on xref:how-tos/create-tenant.adoc[creating a tenant].
 
 == Procedure
 
-=== Registering a tenant
-
-. Check whether there's already a Project Syn tenant for the customer whose cluster you're synthesizing on {portal-lieutenant-tenants}.
-If there's already a tenant you can directly skip to <<_registering_a_cluster,registering a cluster>>.
-
-. Ensure Lieutenant permissions on {git-vshn-net}.
-* The subgroup `cluster-catalogs` exists in the customer's group.
-* Lieutenant (GitLab account `lieutenant-prod`) has owner permissions on the subgroup `cluster-catalogs`.
-* Lieutenant has at least maintainer permissions on the customer's group to create the tenant repository.
-
-. Create tenant on https://control.vshn.net/syn/lieutenanttenants/vshn-lieutenant-prod/_create[control.vshn.net].
-To create the tenant follow the guidelines below regarding the fields to fill out.
-.. "ID": Choose a unique id for the tenant.
-This field is limited to lower-case characters `a-z`, numbers `0-9` and `-`.
-The length is limited to 1-61 characters.
-+
-NOTE: This field cannot be changed after creation, it's used as the Kubernetes object name for the tenant by Lieutenant.
-
-.. "Customer": Choose the customer for which you're creating the tenant.
-.. "Odoo Customer for invoicing": Choose the Odoo customer to whom the invoices for this tenant should be sent.
-Usually this will be the same value as field "Customer".
-Check with the Service Manager for the customer which Odoo customer should be billed for the customer's Project Syn clusters.
-
-.. "Repository Type": Choose "auto".
-.. "GitRepo URL": Usually `ssh://git@git.vshn.net/<customer>/syn-tenant-repo.git`.
-+
-NOTE: Make sure that the GitLab user `lieutenant-prod` has permissions to create this repository.
-
-.. "GitRepo Revision": can usually be left blank.
-.. "Global GitRepo URL": can usually be left blank.
-.. "Global GitRepo Revision": can usually be left blank.
-
-. Configure the `clusterTemplate` for the tenant.
-Generally you want to execute the following command.
-+
-[source,bash]
-----
-export LIEUTENANT_NS=lieutenant-prod
-export TENANT_ID=<tenant id> <1>
-export CUSTOMER_GROUP=<group name> <2>
-kubectl -n ${LIEUTENANT_NS} patch --type=merge tenant ${TENANT_ID} --patch-file /dev/stdin <<EOF
-{
-  "spec": {
-    "clusterTemplate": {
-      "gitRepoTemplate": {
-        "path": "${CUSTOMER_GROUP}/cluster-catalogs",
-        "repoName": "{{ .Name }}",
-        "apiSecretRef": { "name": "vshn-gitlab" }
-      }
-    }
-  }
-}
-EOF
-----
-<1> Tenant ID from step 3
-<2> The group namespace in {git-vshn-net} (the group identifier in the URL)
-+
-[NOTE]
-====
-The cluster template reduces the amount of boiler-plate that you have to configure for each cluster belonging to the tenant.
-The patch command given in this step sets default for the following attributes of each cluster's catalog repository:
-
-* `path`: the path in {git-vshn-net} under which to create the catalog repository.
-We set the default value of this attribute to `<customer-group>/cluster-catalogs`.
-* `repoName`: the name of the cluster catalog repository.
-We set the default value of this attribute to a Go template which uses the cluster's name (ID) as the catalog repo name.
-* `apiSecretRef`: the name of the secret holding the API credentials for {git-vshn-net}.
-We use the GitLab user (`lieutenant-prod`) for all tenants.
-This user's credentials are available in the secret named `vshn-gitlab` which we set as the default.
-====
-
-=== Registering a cluster
-
 . Create a new cluster in https://control.vshn.net/syn/lieutenantclusters/vshn-lieutenant-prod/_create[control.vshn.net].
-There's quite a few fields to fill out when creating a cluster.
-The list below discusses the contents for each field.
-.. "ID": Choose a unique id for the cluster.
-This field is limited to lower-case characters `a-z`, numbers `0-9` and `-`.
-The length is limited to 1-61 characters.
-+
-NOTE: This field cannot be changed after creation, it's used as the Kubernetes object name for the cluster by Lieutenant.
+See xref:explanation/synthesize.adoc#_creating_a_new_cluster_on_control_vshn_net[section "creating a new cluster on control.vshn.net"] of the "Synthesize a cluster" explanation for a more detailed breakdown of the form fields.
 
-.. "Display Name": Choose a descriptive name.
-Check first on the cluster listing overview how other clusters of the Tenant are named.
-.. "Lieutenant Tenant": Choose the tenant to which this cluster belongs
-.. "Service Level (Fact: service_level)": Check with Service Manager which Service Level applies to this cluster
-.. "Cloud", "Distribution", "Region": Check folders `cloud` and `distribution` in the https://git.vshn.net/syn/commodore-defaults[Commodore defaults repo] for already available values for fields "Cloud" and "Distribution" and "Region".
-Use "Cloud" `none` for on-premise setups.
-Field "Region" is not required to be set for "Cloud" `none`.
-If the cloud, region or distribution don't exist yet in the Commodore defaults repo, you can create the following files:
+. Run Commodore to create a local checkout of the new cluster's configuration.
+See the Project Syn https://syn.tools/syn/how-tos/compile-catalog.html["compile a catalog" how-to].
+Use `\https://api.syn.vshn.net` as the value for `LIEUTENANT_URL`.
+Skip the "Cleanup" of that tutorial step for now.
 
-* For a missing cloud, create file `cloud/<cloudname>.yml` in the repo.
-  If the missing cloud has multiple regions, also create file `cloud/<cloudname>/params.yml` in the repo.
-  For multi-region clouds the file `cloud/<cloudname>.yml` file in the repo should always have exactly the following content:
-+
-.<cloud>/cloudname.yml
-[source,yaml]
-----
-classes:
-  - global.cloud.<cloudname>.params
-  - global.cloud.<cloudname>.${facts:region}
-----
+. Add any required initial configurations to your new cluster in `inventory/classes/<tenant-id>/<cluster-id>.yml`
 
-* For a missing region, or if you're creating a new multi-region cloud, create file `cloud/<cloudname>/<regionname>.yml` in the repo.
-* For a missing distribution, create file `distribution/<distributionname>.yml` in the repo.
+. Run `commodore catalog compile --push <cluster-id>` to push the initial cluster catalog to https://git.vshn.net[git.vshn.net].
 
-.. "Rancher Cluster ID (Fact: rancher_cluster_id)": If it's a Rancher cluster, add the Cluster ID from the Rancher Management Server to this field
-.. "Repository Type": Leave at "auto" to have Lieutenant manage the cluster catalog repo on https://git.vshn.net
-.. "GitRepo URL": Leave empty if "Repository Type" is auto.
-   Check with the {projectsyn-ig}, if you have special requirements for the cluster catalog repo.
+. Create any required secrets in Vault.
+See the section describing how to <<_list_referenced_secrets,list referenced secrets>> to generate a list of all secrets referenced in the cluster catalog.
 
-+
-[NOTE]
-====
-Not all combinations work smoothly.
-If in doubt, seek help from the {projectsyn-ig}.
-====
-
-. Add initial configuration in the `<cluster-id>.yml` file in the tenant's Project Syn configuration repository (often called the "Syn tenant repo").
-See {portal-lieutenant-tenants} for a list of tenants and their associated configuration repositories.
-
-. Run Commodore to generate the initial cluster catalog.
-+
-Grab the Kubeconfig for the {synfra-cluster}.
-Then you can setup the environment for Commodore as follows:
+. Fetch the install URL from the {synfra-cluster}.
 +
 [source,bash]
 ----
-# Adjust this to point to where you've stored the Kubeconfig file for the Synfra cluster
 export KUBECONFIG=/path/to/synfra.kubeconfig
-export COMMODORE_API_TOKEN=$(kubectl config view -o jsonpath='{.users[?(@.name == "syn-synfra")].user.token}'  --raw)
-export COMMODORE_API_URL="https://api.syn.vshn.net"
+export LIEUTENANT_TOKEN=$(kubectl config view -o jsonpath='{.users[?(@.name == "syn-synfra")].user.token}'  --raw)
+export LIEUTENANT_AUTH="Authorization:Bearer ${LIEUTENANT_TOKEN}"
+
+export INSTALL_URL=$(curl -H "${LIEUTENANT_AUTH}" "https://${LIEUTENANT_URL}/clusters/${CLUSTER_ID}" | jq -r ".installURL")
 ----
 +
-Now you can follow the steps in the https://syn.tools/syn/how-tos/compile-catalog.html#_compilation[Project Syn "Compile a catalog" how-to]
-
-. Add required tokens to Vault.
-Check the documentation for the K8s distribution of your cluster for required secrets.
-+
-All distributions require tokens for https://k8up.io[K8up] and the https://github.com/projectsyn/component-cluster-backup[cluster-backup] component. Make sure you've got the https://www.vaultproject.io/docs/install[Vault CLI] available locally and run the following commands:
-+
-[source,bash]
-----
-export VAULT_ADDR=https://vault-prod.syn.vshn.net
-export TENANT_ID=<tenant id> <1>
-export CLUSTER_ID=<cluster id> <2>
-
-vault login -method=ldap username=<VSHN username> <3>
-
-# Configure global restic password for K8up
-vault kv put -cas=0 clusters/kv/${TENANT_ID}/${CLUSTER_ID}/global-backup password=$(pwgen -s 32 1)
-
-# Configure restic password for cluster backups
-vault kv put -cas=0 clusters/kv/${TENANT_ID}/${CLUSTER_ID}/cluster-backup password=$(pwgen -s 32 1)
-----
-<1> You can find the tenant ID on {portal-lieutenant-tenants}
-<2> The cluster ID which you chose in step 1a
-<3> Your usual VSHN LDAP login, generally `firstname.lastname`
-+
-Check tenant-specific documentation for further tokens to configure in Vault.
-+
-[NOTE]
-====
-For K8up,  S3 compatible storage is required.
-If the infrastructure does not provide any S3 compatible storage, you need to find an alternative.
-There are several options:
-
-* You can consume S3 storage from a different provider than the one hosting the cluster.
-* You can setup Minio inside the cluster to present an S3-compatible interface backed by a Kubernetes persistent volume.
-There's a https://github.com/projectsyn/component-minio/[Commodore component] for installing Minio.
-====
-
-. Install Steward on the cluster with the install URL displayed in the Portal
+. Install Steward on the new cluster.
 +
 CAUTION: Make sure the `kubectl` command in this step is executed against the cluster to synthesize
 +
@@ -199,58 +52,4 @@ export KUBECONFIG=/path/to/new/cluster.kubeconfig
 kubectl create -f "${INSTALL_URL}"
 ----
 +
-[NOTE]
-====
-The install URL is only valid once and is only valid for 30 minutes after creating the cluster in Lieutenant.
-You can check the expiration date of the install URL by inspecting the cluster object on the {synfra-cluster}.
-If you don't see a field `.status.bootstrapToken.tokenValid` the token has either been used or has expired.
-
-[source,bash]
-----
-export CLUSTER_ID=<cluster id of cluster to synthesize>
-export KUBECONFIG=/path/to/synfra.kubeconfig
-
-export LIEUTENANT_NS=lieutenant-prod
-
-kubectl -n ${LIEUTENANT_NS} describe cluster ${CLUSTER_ID}
-----
-
-Use the following command to reset the cluster's bootstrap token
-
-[source,bash]
-----
-export CLUSTER_ID=<cluster id of cluster to synthesize>
-export KUBECONFIG=/path/to/synfra.kubeconfig
-
-export LIEUTENANT_NS=lieutenant-prod
-export LIEUTENANT_TOKEN=$(kubectl config view -o jsonpath='{.users[?(@.name == "syn-synfra")].user.token}'  --raw)
-export LIEUTENANT_AUTH="Authorization: Bearer ${LIEUTENANT_TOKEN}"
-
-curl -H "${LIEUTENANT_AUTH}" -H "Content-Type: application/json-patch+json" -X PATCH \
-  -d '[{ "op": "remove", "path": "/status/bootstrapToken" }]' \
-  "https://rancher.vshn.net/k8s/clusters/c-c6j2w/apis/syn.tools/v1alpha1/namespaces/${LIEUTENANT_NS}/clusters/${CLUSTER_ID}/status"
-----
-====
-+
-This `kubectl create` command will install Steward on the cluster in the namespace "syn" and Steward will:
-
-* Generate SSH key which is then being used as a deploy key to access the Git repositories managed by the GitRepo objects.
-This SSH key will be sent to the Lieutenant API once generated.
-* Retrieve Git repository URL from Lieutenant
-* Bootstrap Argo CD and generate the "root" Application definition to connect to the GitOps repository
-
-+
-[TIP]
-====
-If you don't have the install URL anymore, you can regenerate it with the following commands.
-Don't forget to reset the `KUBECONFIG` environment variable to the cluster to synthesize after regenerating the install URL.
-
-[source,bash]
-----
-export KUBECONFIG=/path/to/synfra.kubeconfig
-export LIEUTENANT_TOKEN=$(kubectl config view -o jsonpath='{.users[?(@.name == "syn-synfra")].user.token}'  --raw)
-export LIEUTENANT_AUTH="Authorization:Bearer ${LIEUTENANT_TOKEN}"
-
-export INSTALL_URL=$(curl -H "${LIEUTENANT_AUTH}" "https://${LIEUTENANT_URL}/clusters/${CLUSTER_ID}" | jq -r ".installURL")
-----
-====
+NOTE: See the documentation of the xref:explanation/bootstrap-token.adoc[bootstrap token and install URL] for a more detailed explanation, including instructions on how to reset the bootstrap token.

@@ -1,0 +1,45 @@
+= The cluster bootstrap token and install URL
+
+include::partial$synthesize-macros.adoc[]
+
+== What are the bootstrap token and install URL
+
+When a new cluster is created, Lieutenant generates a bootstrap token and an install URL for that cluster.
+The install URL can be used to install Steward on the cluster to synthesize.
+The bootstrap token is embedded into the install URL by Lieutenant.
+
+The bootstrap token and therefore the install URL are only valid once and are only valid for 30 minutes after creating the cluster in Lieutenant.
+
+== Checking the validity of the bootstrap token
+
+You can check the expiration date of the install URL by inspecting the cluster object on the {synfra-cluster}.
+If you don't see a field `.status.bootstrapToken.tokenValid` the token has either been used or has expired.
+
+[source,bash]
+----
+export CLUSTER_ID=<cluster id of cluster to synthesize>
+export KUBECONFIG=/path/to/synfra.kubeconfig
+
+export LIEUTENANT_NS=lieutenant-prod
+
+kubectl -n ${LIEUTENANT_NS} describe cluster ${CLUSTER_ID}
+----
+
+== Resetting the bootstrap token
+
+You can use the following command to reset the cluster's bootstrap token
+This can be helpful if you mistakenly fetched the install URL or if registration and initial configuration of the cluster took more than 30 minutes.
+
+[source,bash]
+----
+export CLUSTER_ID=<cluster id of cluster to synthesize>
+export KUBECONFIG=/path/to/synfra.kubeconfig
+
+export LIEUTENANT_NS=lieutenant-prod
+export LIEUTENANT_TOKEN=$(kubectl config view -o jsonpath='{.users[?(@.name == "syn-synfra")].user.token}'  --raw)
+export LIEUTENANT_AUTH="Authorization: Bearer ${LIEUTENANT_TOKEN}"
+
+curl -H "${LIEUTENANT_AUTH}" -H "Content-Type: application/json-patch+json" -X PATCH \
+  -d '[{ "op": "remove", "path": "/status/bootstrapToken" }]' \
+  "https://rancher.vshn.net/k8s/clusters/c-c6j2w/apis/syn.tools/v1alpha1/namespaces/${LIEUTENANT_NS}/clusters/${CLUSTER_ID}/status"
+----

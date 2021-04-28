@@ -1,0 +1,144 @@
+= Synthesize a cluster
+
+include::partial$synthesize-macros.adoc[]
+
+This explanation goes into the details that are omitted in xref:how-tos/synthesize.adoc[synthesizing a cluster].
+
+== Creating a new cluster on control.vshn.net
+
+There's quite a few fields to fill out when creating a cluster.
+
+ID:: Choose a unique ID for the cluster.
+This field is limited to lower-case characters `a-z`, numbers `0-9` and `-`.
+The length is limited to 1-61 characters.
++
+NOTE: This field cannot be changed after creation, it's used as the Kubernetes object name for the cluster by Lieutenant.
++
+NOTE: We're planning to make the ID field optional, see ticket https://ticket.vshn.net/browse/PORTAL-49[PORTAL-49] in Jira.
+Display Name:: Choose a descriptive name.
+Check first on the cluster listing overview how other clusters of the tenant are named.
+Lieutenant Tenant:: Choose the tenant to which this cluster belongs
+Service Level (Fact: service_level):: Check with Service Manager which Service Level applies to this cluster
+Cloud":: Check folder `cloud` in the {commodore-defaults-repo} for already existing values for cloud.
+If you set this field to `<name>`, there must be a file `cloud/<name>.yml` in the {commodore-defaults-repo}.
++
+Use value `none` for on-premise setups.
++
+See the section on <<_creating_a_missing_cloud,creating a missing cloud>> for some notes on adding a new cloud.
+"Region":: Assuming that the value of field "Cloud" is `<cloudname>`, check folder `cloud/<cloudname>` in the {commodore-defaults-repo} for already existing regions for the cloud.
++
+Field "Region" is not required to be set for "Cloud" `none`.
+"Distribution":: Check folder `distribution` in the {commodore-defaults-repo} for already available distributions.
+
+Rancher Cluster ID (Fact: rancher_cluster_id):: If it's a Rancher cluster, add the cluster ID from the Rancher Management Server to this field
+Repository Type":: Leave at "auto" to have Lieutenant manage the cluster catalog repo on https://git.vshn.net
+GitRepo URL":: Leave empty if "Repository Type" is auto.
+Check with the {projectsyn-ig}, if you have special requirements for the cluster catalog repo.
+
+[NOTE]
+====
+Not all combinations of attributes work smoothly.
+If in doubt, seek help from the {projectsyn-ig}.
+====
+
+=== Creating a missing cloud
+
+If the cloud on which your cluster runs doesn't exist yet in the {commodore-defaults-repo}, you can create it as follows:
+
+. Create file `cloud/<cloudname>.yml` in the repo
+. If the cloud has multiple regions, continue with <<_creating_a_missing_region>> .
+
+=== Creating a missing region
+
+If the cloud region on which your cluster runs doesn't exist yet in the {commodore-defaults-repo}, you can create it as follows:
+
+. If the cloud on which your cluster runs doesn't exist either, go to <<_creating_a_missing_cloud, creating a missing cloud>>, follow the steps there and come back here.
+. Create files `cloud/<cloudname>/params.yml` and `cloud/<cloudname>/<regionname>.yml`
+. If the file `cloud/<cloudname>.yml` has keys `parameters` or `applications`, move those keys and their contents to `cloud/<cloudname>/params.yml`.
+. Ensure that the file `cloud/<cloudname>.yml` has exactly the following contents:
++
+.cloud/<cloudname>.yml
+[source,yaml]
+----
+classes:
+  - global.cloud.<cloudname>.params
+  - global.cloud.<cloudname>.${facts:region}
+----
+
+=== Creating a missing distribution
+
+If the distribution don't exist yet in the {commodore-defaults-repo}, you can create it as follows:
+
+. Create file `distribution/<distributionname>.yml` in the repo.
+
+== Running Commodore and adding the initial cluster configuration
+
+After running Commodore you have a local environment where you can edit your cluster's configuration.
+You can add initial configuration in the `<cluster-id>.yml` file in the tenant's Project Syn configuration repository (often called the "Syn tenant repo").
+The Syn tenant repo is cloned to `inventory/classes/<tenant-id>` by Commodore.
+
+See {portal-lieutenant-tenants} for a list of tenants and their associated configuration repositories.
+
+== Adding required tokens to Vault
+
+This section breaks down sources which may inform you about required tokens for the cluster you're synthesizing.
+
+In general, we recommend that you first check the following documentations for required secrets.
+
+* The installation documentation for the K8s distribution of your cluster
+* Tenant-specific documentation for the cluster you're synthesizing
+
+=== K8up
+
+All distributions require tokens for https://k8up.io[K8up] and the https://github.com/projectsyn/component-cluster-backup[cluster-backup] component.
+Make sure you've got the https://www.vaultproject.io/docs/install[Vault CLI] available locally and run the following commands to create those tokens.
+
+[source,bash]
+----
+export VAULT_ADDR=https://vault-prod.syn.vshn.net
+export TENANT_ID=<tenant id> <1>
+export CLUSTER_ID=<cluster id> <2>
+
+vault login -method=ldap username=<VSHN username> <3>
+
+# Configure global restic password for K8up
+vault kv put -cas=0 clusters/kv/${TENANT_ID}/${CLUSTER_ID}/global-backup password=$(pwgen -s 32 1)
+
+# Configure restic password for cluster backups
+vault kv put -cas=0 clusters/kv/${TENANT_ID}/${CLUSTER_ID}/cluster-backup password=$(pwgen -s 32 1)
+----
+<1> You can find the tenant ID on {portal-lieutenant-tenants}
+<2> The cluster ID which you chose in step 1a
+<3> Your usual VSHN LDAP login, generally `firstname.lastname`
+
+=== List all secret references present in the cluster catalog
+
+You can find all the secrets referenced in the cluster catalog with the command below.
+This command assumes that you're currently in a directory which holds the cluster's catalog repo in subdirectory `catalog`.
+This will be the case if you're currently in the directory in which you've ran Commodore to compile the cluster catalog.
+
+[source,bash]
+----
+find catalog/refs/ -type f -printf "clusters/kv/%P\n" | sed -r 's#(.*)/#\1 #'
+----
+
+The output of the command is formatted to match the location of the secrets in the {syn-vault}.
+The first value on each line indicates the secret in Vault, while the second value on the line indicates the key in that secret.
+
+If you ensure that all the secrets and keys listed by that command are present in the {syn-vault}, there should not be any unwelcome surprises when installing Steward on the cluster.
+ 
+
+== Installing Steward on the cluster
+
+The `kubectl create` command given in the how-to will install Steward on the cluster in the namespace `syn` and Steward will:
+
+* Generate SSH key which is then being used as a deploy key to access the Git repositories managed by the GitRepo objects.
+This SSH key will be sent to the Lieutenant API once generated.
+* Retrieve Git repository URL from Lieutenant
+* Bootstrap Argo CD and generate the "root" Application definition to connect to the GitOps repository
+
+The "bootstrap" Argo CD instance will reconfigure itself and also take over management of the Steward deployment.
+In parallel, Argo CD will deploy all the manifests which are present in the cluster catalog repo onto the cluster.
+
+Some Argo CD applications will fail to deploy until Argo CD has reconfigured itself.
+This happens because the bootstrap Argo CD deployment doesn't support revealing secret references from the {syn-vault}.

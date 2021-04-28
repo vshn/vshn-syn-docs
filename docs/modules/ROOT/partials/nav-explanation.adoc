@@ -1,0 +1,2 @@
+* xref:explanation/bootstrap-token.adoc[Bootstrap token and install URL]
+* xref:explanation/synthesize.adoc[Synthesize a cluster]
