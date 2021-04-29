@@ -19,20 +19,26 @@ Display Name:: Choose a descriptive name.
 Check first on the cluster listing overview how other clusters of the tenant are named.
 Lieutenant Tenant:: Choose the tenant to which this cluster belongs
 Service Level (Fact: service_level):: Check with Service Manager which Service Level applies to this cluster
-Cloud":: Check folder `cloud` in the {commodore-defaults-repo} for already existing values for cloud.
-If you set this field to `<name>`, there must be a file `cloud/<name>.yml` in the {commodore-defaults-repo}.
+Cloud:: Check folder `cloud` in the {commodore-defaults-repo} for already defined clouds.
 +
 Use value `none` for on-premise setups.
 +
-See the section on <<_creating_a_missing_cloud,creating a missing cloud>> for some notes on adding a new cloud.
-"Region":: Assuming that the value of field "Cloud" is `<cloudname>`, check folder `cloud/<cloudname>` in the {commodore-defaults-repo} for already existing regions for the cloud.
+If you set this field to `<name>`, there must be a file `cloud/<name>.yml` in the {commodore-defaults-repo}.
+See the how-to on xref:how-tos/create-missing-cloud-dist.adoc#_create_a_missing_cloud[creating a missing cloud] for some notes on adding a new cloud.
+Region:: Assuming that the value of field "Cloud" is `<cloudname>`, check folder `cloud/<cloudname>` in the {commodore-defaults-repo} for already defined regions for the cloud.
 +
 Field "Region" is not required to be set for "Cloud" `none`.
-"Distribution":: Check folder `distribution` in the {commodore-defaults-repo} for already available distributions.
++
+If you set this field to `<region>`, there must be a file `cloud/<cloudname>/<region>.yml` in the {commodore-defaults-repo}.
+See the how-to on xref:how-tos/create-missing-cloud-dist.adoc#_create_a_missing_region[creating a missing cloud region] for some notes on adding a new region to a cloud.
+Distribution:: Check folder `distribution` in the {commodore-defaults-repo} for already defined K8s distributions.
++
+If you set this field to `<dist>`, there must be a file `distribution/<dist>.yml` in the {commodore-defaults-repo}.
+See the how-to on xref:how-tos/create-missing-cloud-dist.adoc#_create_a_missing_region[creating a missing distribution] for some notes on defining a new K8s distribution.
 
 Rancher Cluster ID (Fact: rancher_cluster_id):: If it's a Rancher cluster, add the cluster ID from the Rancher Management Server to this field
-Repository Type":: Leave at "auto" to have Lieutenant manage the cluster catalog repo on https://git.vshn.net
-GitRepo URL":: Leave empty if "Repository Type" is auto.
+Repository Type:: Leave at "auto" to have Lieutenant manage the cluster catalog repo on https://git.vshn.net
+GitRepo URL:: Leave empty if "Repository Type" is auto.
 Check with the {projectsyn-ig}, if you have special requirements for the cluster catalog repo.
 
 [NOTE]
@@ -40,36 +46,6 @@ Check with the {projectsyn-ig}, if you have special requirements for the cluster
 Not all combinations of attributes work smoothly.
 If in doubt, seek help from the {projectsyn-ig}.
 ====
-
-=== Creating a missing cloud
-
-If the cloud on which your cluster runs doesn't exist yet in the {commodore-defaults-repo}, you can create it as follows:
-
-. Create file `cloud/<cloudname>.yml` in the repo
-. If the cloud has multiple regions, continue with <<_creating_a_missing_region>> .
-
-=== Creating a missing region
-
-If the cloud region on which your cluster runs doesn't exist yet in the {commodore-defaults-repo}, you can create it as follows:
-
-. If the cloud on which your cluster runs doesn't exist either, go to <<_creating_a_missing_cloud, creating a missing cloud>>, follow the steps there and come back here.
-. Create files `cloud/<cloudname>/params.yml` and `cloud/<cloudname>/<regionname>.yml`
-. If the file `cloud/<cloudname>.yml` has keys `parameters` or `applications`, move those keys and their contents to `cloud/<cloudname>/params.yml`.
-. Ensure that the file `cloud/<cloudname>.yml` has exactly the following contents:
-+
-.cloud/<cloudname>.yml
-[source,yaml]
-----
-classes:
-  - global.cloud.<cloudname>.params
-  - global.cloud.<cloudname>.${facts:region}
-----
-
-=== Creating a missing distribution
-
-If the distribution don't exist yet in the {commodore-defaults-repo}, you can create it as follows:
-
-. Create file `distribution/<distributionname>.yml` in the repo.
 
 == Running Commodore and adding the initial cluster configuration
 

@@ -1,0 +1,38 @@
+= Create missing cloud, region, or distribution
+
+include::partial$synthesize-macros.adoc[]
+
+This how-to gives instructions on how to add a missing cloud, cloud region or K8s distribution in the {commodore-defaults-repo}.
+
+== Create a missing cloud
+
+If the cloud on which your cluster runs doesn't exist yet in the {commodore-defaults-repo}, you can create it as follows:
+
+. Create file `cloud/<cloudname>.yml` in the repo
+. If the cloud has multiple regions, continue with <<_creating_a_missing_region>> .
+
+== Create a missing region
+
+If the cloud region on which your cluster runs doesn't exist yet in the {commodore-defaults-repo}, you can create it as follows:
+
+. If the cloud on which your cluster runs doesn't exist either, go to <<_creating_a_missing_cloud, creating a missing cloud>>, follow the steps there and come back here.
+. Create files `cloud/<cloudname>/params.yml` and `cloud/<cloudname>/<regionname>.yml`.
++
+NOTE: File `cloud/<cloudname>/params.yml` may exist already if you're adding a region to an existing cloud.
+. If the file `cloud/<cloudname>.yml` has keys `parameters` or `applications`, move those keys and their contents to `cloud/<cloudname>/params.yml`.
+. Ensure that the file `cloud/<cloudname>.yml` has exactly the following contents:
++
+.cloud/<cloudname>.yml
+[source,yaml]
+----
+classes:
+  - global.cloud.<cloudname>.params
+  - global.cloud.<cloudname>.${facts:region}
+----
+
+== Create a missing distribution
+
+If the distribution don't exist yet in the {commodore-defaults-repo}, you can create it as follows:
+
+. Create file `distribution/<distributionname>.yml` in the repo.
+
