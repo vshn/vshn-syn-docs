@@ -10,6 +10,8 @@ The bootstrap token is embedded into the install URL by Lieutenant.
 
 The bootstrap token and therefore the install URL are only valid once and are only valid for 30 minutes after creating the cluster in Lieutenant.
 
+NOTE: We're planning to increase the life time of the bootstrap token from 30 minutes to 24 hours, see Jira ticket https://ticket.vshn.net/browse/SYN-354[SYN-354].
+
 == Checking the validity of the bootstrap token
 
 You can check the expiration date of the install URL by inspecting the cluster object on the {synfra-cluster}.
