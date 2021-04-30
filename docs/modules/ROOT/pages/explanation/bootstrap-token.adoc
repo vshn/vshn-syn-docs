@@ -27,6 +27,19 @@ export LIEUTENANT_NS=lieutenant-prod
 kubectl -n ${LIEUTENANT_NS} describe cluster ${CLUSTER_ID}
 ----
 
+== Fetching the install URL from the Lieutenant API
+
+If you need to, you can fetch the install URL from the Lieutenant API using the following commands:
+
+[source,bash]
+----
+export KUBECONFIG=/path/to/synfra.kubeconfig
+export LIEUTENANT_TOKEN=$(kubectl config view -o jsonpath='{.users[?(@.name == "syn-synfra")].user.token}'  --raw)
+export LIEUTENANT_AUTH="Authorization:Bearer ${LIEUTENANT_TOKEN}"
+
+export INSTALL_URL=$(curl -H "${LIEUTENANT_AUTH}" "https://${LIEUTENANT_URL}/clusters/${CLUSTER_ID}" | jq -r ".installURL")
+----
+
 == Resetting the bootstrap token
 
 You can use the following command to reset the cluster's bootstrap token
