@@ -57,6 +57,8 @@ See {portal-lieutenant-tenants} for a list of tenants and their associated confi
 
 == Adding required tokens to Vault
 
+NOTE: The "Clusters" view on {portal-lieutenant-clusters} has a button which directly links to the cluster's secrets in Vault on the right-hand side.
+
 This section breaks down sources which may inform you about required tokens for the cluster you're synthesizing.
 
 In general, we recommend that you first check the following documentations for required secrets.
