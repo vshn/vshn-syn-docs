@@ -37,7 +37,9 @@ Skip the "Cleanup" of that tutorial step for now.
 . Run `commodore catalog compile --push <cluster-id>` to push the initial cluster catalog to https://git.vshn.net[git.vshn.net].
 
 . Create any required secrets in Vault.
-See the section describing how to <<_list_referenced_secrets,list referenced secrets>> to generate a list of all secrets referenced in the cluster catalog.
+See the section on xref:explanation/synthesize.adoc#_adding_required_tokens_to_vault[adding required tokens to Vault] for a more detailed explanation on adding secrets.
++
+NOTE: If you can't add secrets to Vault, ask for `synroot` group privileges in Vault.
 
 . Install Steward on the new cluster by executing the `kubectl` command you noted down in step 2.
 +
