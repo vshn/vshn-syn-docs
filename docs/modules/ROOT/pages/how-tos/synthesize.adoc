@@ -1,0 +1,46 @@
+= Synthesize a cluster
+
+include::partial$synthesize-macros.adoc[]
+
+TIP: "Synthesize" is the act of making a cluster managed by Project Syn
+
+This how-to will show you how to synthesize a cluster.
+
+== Prerequisites
+
+* `cluster-admin` permissions on the cluster to synthesize.
+* Write access in the Project Syn "Clusters" view on {portal-lieutenant-clusters}.
+* Access to the {synfra-cluster}.
+* The Syn tenant of the cluster to synthesize exists already.
+If the tenant doesn't exist yet, see the documentation on xref:how-tos/create-tenant.adoc[creating a tenant].
+
+== Procedure
+
+. Create a new cluster in https://control.vshn.net/syn/lieutenantclusters/vshn-lieutenant-prod/_create[control.vshn.net].
+See xref:explanation/synthesize.adoc#_creating_a_new_cluster_on_control_vshn_net[section "creating a new cluster on control.vshn.net"] of the "Synthesize a cluster" explanation for a more detailed breakdown of the form fields.
+
+. Note down the `kubectl` command shown, you'll need it later.
++
+[NOTE]
+====
+Right now, you need to refresh the page you land on after creating a cluster in order for the command to be shown.
+We are working on addressing this issue, see Jira ticket https://ticket.vshn.net/browse/PORTAL-50[PORTAL-50].
+====
+
+. Run Commodore to create a local checkout of the new cluster's configuration.
+See the Project Syn https://syn.tools/syn/how-tos/compile-catalog.html["compile a catalog" how-to].
+Use `\https://api.syn.vshn.net` as the value for `LIEUTENANT_URL`.
+Skip the "Cleanup" of that tutorial step for now.
+
+. Add any required initial configurations to your new cluster in `inventory/classes/<tenant-id>/<cluster-id>.yml`
+
+. Run `commodore catalog compile --push <cluster-id>` to push the initial cluster catalog to https://git.vshn.net[git.vshn.net].
+
+. Create any required secrets in Vault.
+See the section describing how to <<_list_referenced_secrets,list referenced secrets>> to generate a list of all secrets referenced in the cluster catalog.
+
+. Install Steward on the new cluster by executing the `kubectl` command you noted down in step 2.
++
+CAUTION: Make sure the `kubectl` command in this step is executed against the cluster to synthesize
++
+NOTE: See the documentation of the xref:explanation/bootstrap-token.adoc[bootstrap token and install URL] for a more detailed explanation, including instructions on how to fetch the install URL from the Lieutenant API and instructions to reset the bootstrap token.

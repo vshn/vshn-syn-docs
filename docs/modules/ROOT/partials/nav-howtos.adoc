@@ -1,2 +1,6 @@
 * xref:how-tos/feature-requests.adoc[Feature requests]
 * xref:how-tos/opsgenie.adoc[Integrating Alertmanager with OpsGenie]
+* xref:how-tos/synthesize.adoc[Synthesize a cluster]
+* xref:how-tos/create-tenant.adoc[Create a tenant]
+* xref:how-tos/create-missing-cloud-dist.adoc[Create missing cloud, region, or distribution]
+* xref:how-tos/decommission.adoc[Decommission cluster or tenant]

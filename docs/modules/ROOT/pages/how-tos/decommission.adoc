@@ -1,0 +1,68 @@
+= Decommission cluster or tenant
+
+include::partial$synthesize-macros.adoc[]
+
+== Prerequisites
+
+* Write access in the Project Syn "Clusters" and "Tenants" views on https://control.vshn.net.
+* Access to the {synfra-cluster}.
+
+== Decommission cluster
+
+[NOTE]
+====
+These instructions assume that the cluster itself will be decommissioned as well.
+Don't hesitate to reach out to {projectsyn-ig} if you need help with just "desynthesizing" a cluster which will not be decommissioned completely.
+====
+
+. Clone the cluster catalog repo
++
+[source,bash]
+----
+export KUBECONFIG=/path/to/synfra.kubeconfig
+export CLUSTER_ID=<cluster-id> <1>
+
+export LIEUTENANT_TOKEN=$(kubectl config view \
+    -o jsonpath='{.users[?(@.name == "syn-synfra")].user.token}'  --raw)
+export LIEUTENANT_URL=https://api.syn.vshn.net
+git clone $(curl -sH"Authorization: Bearer ${LIEUTENANT_TOKEN}" \
+    "${LIEUTENANT_URL}/clusters/${CLUSTER_ID}" | jq -r '.gitRepo.url')
+----
+<1> Cluster ID of cluster to decommission
+
+. Remove all secrets referenced by the cluster catalog in Vault:
++
+[source,bash]
+----
+export VAULT_ADDR=https://vault-prod.syn.vshn.net
+
+vault login -method=ldap username=<VSHN username> <1>
+
+cd path/to/catalog/repo
+for secret in $(find refs/ -type f -printf "clusters/kv/%P\n" | sed -r 's#(.*)/#\1#'); do
+  vault kv delete "$secret"
+done
+----
+<1> Your usual VSHN LDAP login, generally `firstname.lastname`
++
+[NOTE]
+====
+`vault kv delete` doesn't fully destroy the secret.
+You can restore secrets which were deleted with `vault kv delete` using `vault kv undelete`.
+====
+
+. Remove cluster in {portal-lieutenant-clusters}
+* Search for the cluster
+* Click the delete button on the right
+
++
+NOTE: This will also archive the cluster catalog Git repository on GitLab.
+
+== Decommission tenant
+
+. Decommission all clusters still associated with the tenant according to <<_decommission_cluster,the previous section>>.
+. Delete tenant in {portal-lieutenant-tenants}
+* Search for the tenant
+* Click the delete button on the right
++
+NOTE: This should archive the tenant Git repository on GitLab.
