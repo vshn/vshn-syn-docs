@@ -9,7 +9,22 @@ This how-to gives instructions on how to add a missing cloud, cloud region or K8
 If the cloud on which your cluster runs doesn't exist yet in the {commodore-defaults-repo}, you can create it as follows:
 
 . Create file `cloud/<cloudname>.yml` in the repo
-. If the cloud has multiple regions, continue with <<_creating_a_missing_region>> .
+. Add the new cloud to all cloud-aware distributions
++
+[source,shell]
+----
+cloud=<cloudname>
+for dist in distribution/*.yml; do
+  d=${dist#distribution\/}
+  d=${d%.yml}
+  dist_cloud="distribution/${d%.yml}/cloud"
+  if [ -d "${dist_cloud}" ]; then
+    echo "Adding cloud to distribution ${d}"
+    touch "${dist_cloud}/${cloud}.yml"
+  fi
+done
+----
+. If the cloud has multiple regions, continue with <<_creating_a_missing_region>>
 
 == Create a missing region
 
@@ -35,4 +50,52 @@ classes:
 If the distribution don't exist yet in the {commodore-defaults-repo}, you can create it as follows:
 
 . Create file `distribution/<distributionname>.yml` in the repo.
+
+
+== Make a distribution cloud-aware
+
+If you foresee -- or currently have -- the need to be able to provide cloud-specific configurations for a distribution, you can make the distribution cloud-aware.
+
+. If the distribution doesn't exist yet, <<_create_a_missing_distribution,create it>>
+. Ensure that the file `distribution/<distributionname>.yml` has the following class includes:
++
+.distribution/<distributionname>.yml
+[source,yaml]
+----
+classes:
+  - global.distribution.<distributionname>.params
+  - global.distribution.<distributionname>.cloud.${facts:cloud}
+----
++
+NOTE: It's perfectly acceptable to have entries in the `applications` array in this file.
++
+[NOTE]
+====
+It's fine to include additional classes in this file.
+Remember that class includes are processed top-to-bottom.
+This means that if you include a class at the end of the `classes` array, its configuration will override configurations in the other classes.
+====
+
+. Move any `parameters` configuration into `distribution/<distributionname>/params.yml`
++
+[TIP]
+====
+Consider splitting out large component configurations from the `params.yml` file.
+
+Always split out configurations of a single component and move them into a class named `distribution/<distributionname>/<component-name>.yml` and include that class in `distribution/<distributionname>/params.yml`.
+
+We recommend splitting out component configurations if they consist of 30+ lines of YAML.
+====
+
+. Create folder `distribution/<distributionname>/cloud` and create a file `<cloudname>.yml` for each cloud that the distribution needs to support.
++
+If you're not sure which clouds the distribution needs to support, create files for all clouds which are defined in the configuration with
++
+[source,shell]
+----
+distname=<distributionname>
+for cloud in cloud/*.yml; do
+  touch distribution/${distname}/${cloud}
+done
+----
 
