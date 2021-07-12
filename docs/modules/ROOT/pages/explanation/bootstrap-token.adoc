@@ -34,6 +34,7 @@ If you need to, you can fetch the install URL from the Lieutenant API using the 
 [source,bash]
 ----
 export KUBECONFIG=/path/to/synfra.kubeconfig
+export LIEUTENANT_URL=api.syn.vshn.net
 export LIEUTENANT_TOKEN=$(kubectl config view -o jsonpath='{.users[?(@.name == "syn-synfra")].user.token}'  --raw)
 export LIEUTENANT_AUTH="Authorization:Bearer ${LIEUTENANT_TOKEN}"
 
