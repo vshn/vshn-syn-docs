@@ -1,4 +1,5 @@
 * xref:how-tos/feature-requests.adoc[Feature requests]
+* xref:how-tos/access-argo-cd.adoc[Access Argo CD]
 * xref:how-tos/opsgenie.adoc[Integrating Alertmanager with OpsGenie]
 * xref:how-tos/synthesize.adoc[Synthesize a cluster]
 * xref:how-tos/create-tenant.adoc[Create a tenant]

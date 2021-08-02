@@ -1,0 +1,17 @@
+= Access Argo CD running in a cluster
+
+Make sure your `kubectl` context is set to the cluster you want to work with.
+
+. Retrieve the admin secret
++
+----
+kubectl -n syn get secret steward -o json | jq -r .data.token | base64 --decode
+----
+. Port-forward to the Argo CD service
++
+----
+kubectl -n syn port-forward svc/argocd-server 8080:80
+----
+. Access Argo CD with http://localhost:8080/. +
+  _Username_: `admin`. +
+  _Password_: secret retrieved in first step.
