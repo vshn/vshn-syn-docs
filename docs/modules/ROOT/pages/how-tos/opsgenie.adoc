@@ -90,7 +90,7 @@ openshift4_monitoring:
       receiver: opsgenie
 ----
 
-Additionally, we make use of Project Syn and `kube-prometheus` conventions to improve the presentation of the alerts in OpsGenie.  
+Additionally, we make use of Project Syn and `kube-prometheus` conventions to improve the presentation of the alerts in OpsGenie.
 One such convention is that the alert criticality is present as label `severity`.
 To ensure the configuration snippets which use fields in `.GroupLabels` work correctly,  alerts must be grouped by `alertname`, `namespace`, and `severity` at least.
 
@@ -98,6 +98,7 @@ To ensure the configuration snippets which use fields in `.GroupLabels` work cor
 ====
 We don't need group alerts by the `tenant_id` and `cluster_id` labels (which are added by Project Syn), since each cluster has its own Alertmanager.
 All alerts in a cluster's Alertmanager will have the same value for `tenant_id` and `cluster_id`, allowing us to refer to them through `.CommonLabels`.
+However, in order to have individual alerts when multiple clusters are affected by the same alert, we also group by cluster_id.
 ====
 
 [source,yaml]
@@ -109,6 +110,7 @@ openshift4_monitoring:
         - alertname
         - namespace
         - severity
+        - cluster_id
 ----
 
 First we want to map the alert group's `severity` label to an OpsGenie priority.
@@ -305,6 +307,7 @@ parameters:
           - alertname
           - namespace
           - severity
+          - cluster_id
         receiver: opsgenie
         routes:
           - match:
