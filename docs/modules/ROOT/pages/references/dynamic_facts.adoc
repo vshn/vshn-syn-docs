@@ -1,0 +1,55 @@
+= Dynamic Facts
+
+While Project Syn doesn't have mandatory dynamic facts, at VSHN we report a few.
+This page provides a reference for all dynamic facts collected at VSHN.
+
+== `kubernetesVersion`
+
+The `kubernetesVersion` facts holds the following information about the clusters kubernetes version.
+
+`major`::
+The kubernetes major version (generally just 1).
+`minor`::
+The kubernetes minor version.
+`gitVersion`::
+The complete kubernetes version as reported by git.
+
+The facts holds further build specific information, such as build date and compiler details.
+
+.Example
+[source,yaml]
+----
+"kubernetesVersion": {
+  "buildDate": "2021-10-15T20:13:58Z",
+  "compiler": "gc",
+  "gitCommit": "6438632813d72669a22c860cd6c218fd4fe4ec24",
+  "gitTreeState": "clean",
+  "gitVersion": "v1.21.1+6438632",
+  "goVersion": "go1.16.6",
+  "major": "1",
+  "minor": "21",
+  "platform": "linux/amd64"
+}
+----
+      
+== `openshiftVersion`
+
+The `openshiftVersion` facts holds  information about the clusters OpenShift version.
+If the cluster is not running OpenShift, this fact will be empty.
+
+`major`::
+The OpenShift major version.
+`minor`::
+The OpenShift minor version.
+`patch`::
+The OpenShift patch version.
+
+.Example
+[source,yaml]
+----
+"openshiftVersion": {
+  "Major": "4",
+  "Minor": "8",
+  "Patch": "17"
+}
+----
