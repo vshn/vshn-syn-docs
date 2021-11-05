@@ -35,7 +35,7 @@ The fact holds further build specific information, such as build date and compil
 == `openshiftVersion`
 
 The `openshiftVersion` fact holds information about the cluster's OpenShift version.
-If the cluster is not running OpenShift, this fact will be empty.
+If the cluster is not running OpenShift, this fact is not present.
 
 `major`::
 The OpenShift major version.
