@@ -5,16 +5,16 @@ This page provides a reference for all dynamic facts collected at VSHN.
 
 == `kubernetesVersion`
 
-The `kubernetesVersion` facts holds the following information about the clusters kubernetes version.
+The `kubernetesVersion` fact holds the following information about the cluster's Kubernetes version.
 
 `major`::
-The kubernetes major version (generally just 1).
+The Kubernetes major version (generally just 1).
 `minor`::
-The kubernetes minor version.
+The Kubernetes minor version.
 `gitVersion`::
-The complete kubernetes version as reported by git.
+The complete Kubernetes version as reported by Git.
 
-The facts holds further build specific information, such as build date and compiler details.
+The fact holds further build specific information, such as build date and compiler details.
 
 .Example
 [source,yaml]
@@ -34,7 +34,7 @@ The facts holds further build specific information, such as build date and compi
       
 == `openshiftVersion`
 
-The `openshiftVersion` facts holds  information about the clusters OpenShift version.
+The `openshiftVersion` fact holds information about the cluster's OpenShift version.
 If the cluster is not running OpenShift, this fact will be empty.
 
 `major`::
