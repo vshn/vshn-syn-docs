@@ -39,7 +39,7 @@ export VAULT_ADDR=https://vault-prod.syn.vshn.net
 vault login -method=ldap username=<VSHN username> <1>
 
 cd path/to/catalog/repo
-for secret in $(find refs/ -type f -printf "clusters/kv/%P\n" | sed -r 's#(.*)/#\1#'); do
+for secret in $(find refs/ -type f -printf "clusters/kv/%P\n" | sed -r 's#(.*)/.*#\1#'); do
   vault kv delete "$secret"
 done
 ----
