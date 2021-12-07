@@ -8,7 +8,6 @@ A Project Syn tenant is a prerequisite for xref:how-tos/synthesize.adoc[synthesi
 == Prerequisites
 
 * Write access in the Project Syn "Tenants" view on {portal-lieutenant-tenants}.
-* Access to the {synfra-cluster}.
 
 == Procedure
 
@@ -42,9 +41,12 @@ Global GitRepo URL:: can usually be left blank.
 Global GitRepo Revision:: can usually be left blank.
 
 
-. Configure the `clusterTemplate` for the tenant.
-Generally you want to execute the following command.
-+
+[NOTE]
+====
+The automated setup assumes that the customer's group on {git-vshn-net} is at `git.vshn.net/<customer>`.
+If this isn't the case you need to update the created tenant resource.
+Generally you want to execute the following command on the {synfra-cluster}.
+
 [source,bash]
 ----
 export LIEUTENANT_NS=lieutenant-prod
@@ -56,8 +58,6 @@ kubectl -n ${LIEUTENANT_NS} patch --type=merge tenant ${TENANT_ID} --patch-file 
     "clusterTemplate": {
       "gitRepoTemplate": {
         "path": "${CUSTOMER_GROUP}/cluster-catalogs",
-        "repoName": "{{ .Name }}",
-        "apiSecretRef": { "name": "vshn-gitlab" }
       }
     }
   }
@@ -66,18 +66,5 @@ EOF
 ----
 <1> Tenant ID from step 2
 <2> The group namespace in {git-vshn-net} (the group identifier in the URL)
-+
-[NOTE]
-====
-The cluster template reduces the amount of boiler-plate that you have to configure for each cluster belonging to the tenant.
-The patch command given in this step sets default for the following attributes of each cluster's catalog repository:
-
-* `path`: the path in {git-vshn-net} under which to create the catalog repository.
-We set the default value of this attribute to `<customer-group>/cluster-catalogs`.
-* `repoName`: the name of the cluster catalog repository.
-We set the default value of this attribute to a Go template which uses the cluster's name (ID) as the catalog repo name.
-* `apiSecretRef`: the name of the secret holding the API credentials for {git-vshn-net}.
-We use the GitLab user (`lieutenant-prod`) for all tenants.
-This user's credentials are available in the secret named `vshn-gitlab` which we set as the default.
 ====
 
