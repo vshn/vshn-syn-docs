@@ -2,7 +2,7 @@
 
 == Policy
 
-We require that all component specifications (entries in `parameters.componnents`) in the https://git.vshn.net/syn/commodore-defaults[VSHN global defaults] have an explicit version specification.
+We require that all component specifications (entries in `parameters.components`) in the https://git.vshn.net/syn/commodore-defaults[VSHN global defaults] have an explicit version specification.
 
 == Rationale
 
