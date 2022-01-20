@@ -1,1 +1,3 @@
 * xref:references/dynamic_facts.adoc[Dynamic facts]
+* Policies
+** xref:references/component_versions.adoc[Component versions]
