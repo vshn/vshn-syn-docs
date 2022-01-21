@@ -1,0 +1,17 @@
+= Commodore component versions
+
+== Policy
+
+We require that all component specifications (entries in `parameters.components`) in the https://git.vshn.net/syn/commodore-defaults[VSHN global defaults] have an explicit version specification.
+
+== Rationale
+
+Commodore v0.13.0 https://syn.tools/commodore/reference/deprecation-notices.html#_components_without_versions[deprecated] component specifications without explicit versions.
+We plan to completely drop support for component specifications without versions in Commodore v1.0.0.
+
+Additionally, https://github.com/projectsyn/commodore-renovate/[Commodore Renovate] can only provide automated version updates for components which specify an explicit version in the hierarchy.
+
+To ensure a smooth transition to Commodore v1.0.0 and to maximize the usefulness of Commodore Renovate, we now require explicit versions for all components in the VSHN global defaults.
+We've ensured that all existing components are specified with an explicit version in this https://git.vshn.net/syn/commodore-defaults/-/merge_requests/196[merge request].
+
+Going forward, we will enable linting of the component specifications for MRs on the VSHN global defaults repository.
