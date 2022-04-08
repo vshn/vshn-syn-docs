@@ -1,0 +1,95 @@
+= Connect to Lieutenant clusters
+
+Lieutenant clusters are virtual clusters on APPUiO Cloud.
+They support OIDC authentication for SSO through id.vshn.net.
+
+https://github.com/int128/kubelogin[kubelogin] is the `kubectl` plugin required for interacting with OIDC enabled clusters.
+
+. Install kubelogin
++
+[source,shell]
+----
+# Homebrew (macOS and Linux)
+brew install int128/kubelogin/kubelogin
+# Krew (macOS, Linux, Windows and ARM)
+kubectl krew install oidc-login <1>
+# Chocolatey (Windows)
+choco install kubelogin
+----
+<1> Assumes that you have installed https://github.com/kubernetes-sigs/krew[krew]
+
+. Copy the following config to your `~/.kube/config` or create a new file and set the `KUBECONFIG` environment variable.
++
+[source,yaml]
+----
+apiVersion: v1
+kind: Config
+preferences: {}
+current-context: lieutenant-prod
+clusters:
+- cluster:
+    server: https://syn-lieutenant-dev.apps.cloudscale-lpg-2.appuio.cloud
+  name: lieutenant-dev
+- cluster:
+    server: https://syn-lieutenant-int.apps.cloudscale-lpg-2.appuio.cloud
+  name: lieutenant-int
+- cluster:
+    server: https://syn-lieutenant-prod.apps.cloudscale-lpg-2.appuio.cloud
+  name: lieutenant-prod
+contexts:
+- context:
+    cluster: lieutenant-dev
+    namespace: lieutenant
+    user: lieutenant-dev-sso
+  name: lieutenant-dev
+- context:
+    cluster: lieutenant-int
+    namespace: lieutenant
+    user: lieutenant-int-sso
+  name: lieutenant-int
+- context:
+    cluster: lieutenant-prod
+    namespace: lieutenant
+    user: lieutenant-prod-sso
+  name: lieutenant-prod
+users:
+- name: lieutenant-dev-sso
+  user:
+    exec:
+      apiVersion: client.authentication.k8s.io/v1beta1
+      args:
+      - oidc-login
+      - get-token
+      - --oidc-issuer-url=https://id.test.vshn.net/auth/realms/VSHN-main-dev-realm
+      - --oidc-client-id=syn-lieutenant-dev
+      - --oidc-extra-scope=email offline_access profile openid
+      command: kubectl
+      env: null
+      provideClusterInfo: false
+- name: lieutenant-int-sso
+  user:
+    exec:
+      apiVersion: client.authentication.k8s.io/v1beta1
+      args:
+      - oidc-login
+      - get-token
+      - --oidc-issuer-url=https://id.vshn.net/auth/realms/vshn-realm
+      - --oidc-client-id=syn_lieutenant-int
+      - --oidc-extra-scope=email offline_access profile openid
+      command: kubectl
+      env: null
+      provideClusterInfo: false
+- name: lieutenant-prod-sso
+  user:
+    exec:
+      apiVersion: client.authentication.k8s.io/v1beta1
+      args:
+      - oidc-login
+      - get-token
+      - --oidc-issuer-url=https://id.vshn.net/auth/realms/vshn-realm
+      - --oidc-client-id=syn_lieutenant-prod
+      - --oidc-extra-scope=email offline_access profile openid
+      command: kubectl
+      env: null
+      provideClusterInfo: false
+----

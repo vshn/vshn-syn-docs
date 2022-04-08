@@ -45,14 +45,13 @@ Global GitRepo Revision:: can usually be left blank.
 ====
 The automated setup assumes that the customer's group on {git-vshn-net} is at `git.vshn.net/<customer>`.
 If this isn't the case you need to update the created tenant resource.
-Generally you want to execute the following command on the {synfra-cluster}.
+Generally you want to execute the following command on the {lieutenant-cluster}.
 
 [source,bash]
 ----
-export LIEUTENANT_NS=lieutenant-prod
 export TENANT_ID=<tenant id> <1>
 export CUSTOMER_GROUP=<group name> <2>
-kubectl -n ${LIEUTENANT_NS} patch --type=merge tenant ${TENANT_ID} --patch-file /dev/stdin <<EOF
+kubectl -n lieutenant patch --type=merge tenant ${TENANT_ID} --patch-file /dev/stdin <<EOF
 {
   "spec": {
     "clusterTemplate": {

@@ -5,7 +5,7 @@ include::partial$synthesize-macros.adoc[]
 == Prerequisites
 
 * Write access in the Project Syn "Clusters" and "Tenants" views on https://control.vshn.net.
-* Access to the {synfra-cluster}.
+* Access to the {lieutenant-cluster}.
 
 == Decommission cluster
 
@@ -19,13 +19,10 @@ Don't hesitate to reach out to {projectsyn-ig} if you need help with just "desyn
 +
 [source,bash]
 ----
-export KUBECONFIG=/path/to/synfra.kubeconfig
 export CLUSTER_ID=<cluster-id> <1>
 
-export LIEUTENANT_TOKEN=$(kubectl config view \
-    -o jsonpath='{.users[?(@.name == "syn-synfra")].user.token}'  --raw)
 export LIEUTENANT_URL=https://api.syn.vshn.net
-git clone $(curl -sH"Authorization: Bearer ${LIEUTENANT_TOKEN}" \
+git clone $(curl -sH"Authorization: Bearer$(commodore fetch-token)" \
     "${LIEUTENANT_URL}/clusters/${CLUSTER_ID}" | jq -r '.gitRepo.url')
 ----
 <1> Cluster ID of cluster to decommission
@@ -36,14 +33,13 @@ git clone $(curl -sH"Authorization: Bearer ${LIEUTENANT_TOKEN}" \
 ----
 export VAULT_ADDR=https://vault-prod.syn.vshn.net
 
-vault login -method=ldap username=<VSHN username> <1>
+vault login -method=oidc
 
 cd path/to/catalog/repo
 for secret in $(find refs/ -type f -printf "clusters/kv/%P\n" | sed -r 's#(.*)/.*#\1#'); do
   vault kv delete "$secret"
 done
 ----
-<1> Your usual VSHN LDAP login, generally `firstname.lastname`
 +
 [NOTE]
 ====

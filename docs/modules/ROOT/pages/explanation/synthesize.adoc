@@ -77,7 +77,7 @@ export VAULT_ADDR=https://vault-prod.syn.vshn.net
 export TENANT_ID=<tenant id> <1>
 export CLUSTER_ID=<cluster id> <2>
 
-vault login -method=ldap username=<VSHN username> <3>
+vault login -method=oidc
 
 # Configure global restic password for K8up
 vault kv put -cas=0 clusters/kv/${TENANT_ID}/${CLUSTER_ID}/global-backup password=$(pwgen -s 32 1)
@@ -87,7 +87,6 @@ vault kv put -cas=0 clusters/kv/${TENANT_ID}/${CLUSTER_ID}/cluster-backup passwo
 ----
 <1> You can find the tenant ID on {portal-lieutenant-tenants}
 <2> The cluster ID which you chose in step 1a
-<3> Your usual VSHN LDAP login, generally `firstname.lastname`
 
 === List all secret references present in the cluster catalog
 
@@ -104,7 +103,7 @@ The output of the command is formatted to match the location of the secrets in t
 The first value on each line indicates the secret in Vault, while the second value on the line indicates the key in that secret.
 
 If you ensure that all the secrets and keys listed by that command are present in the {syn-vault}, there should not be any unwelcome surprises when installing Steward on the cluster.
- 
+
 
 == Installing Steward on the cluster
 

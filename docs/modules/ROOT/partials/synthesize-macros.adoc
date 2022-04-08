@@ -2,7 +2,7 @@
 :portal-lieutenant-tenants: https://control.vshn.net/syn/lieutenanttenants/vshn-lieutenant-prod[control.vshn.net]
 :portal-lieutenant-clusters: https://control.vshn.net/syn/lieutenantclusters/vshn-lieutenant-prod[control.vshn.net]
 :git-vshn-net: https://git.vshn.net[git.vshn.net]
-:synfra-cluster: https://rancher.vshn.net/c/c-c6j2w/monitoring[Synfra cluster]
+:lieutenant-cluster: xref:how-tos/connect-to-lieutenant-clusters.adoc[Lieutenant cluster]
 :commodore-defaults-repo: https://git.vshn.net/syn/commodore-defaults[Commodore defaults repo]
 :syn-vault: https://vault-prod.syn.vshn.net[Project Syn Vault]
 
