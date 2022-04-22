@@ -1,3 +1,4 @@
+* xref:how-tos/connect-to-lieutenant-clusters.adoc[Connect to Lieutenant clusters]
 * xref:how-tos/feature-requests.adoc[Feature requests]
 * xref:how-tos/access-argo-cd.adoc[Access Argo CD]
 * xref:how-tos/opsgenie.adoc[Integrating Alertmanager with OpsGenie]

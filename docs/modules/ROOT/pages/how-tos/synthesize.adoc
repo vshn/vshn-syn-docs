@@ -10,7 +10,7 @@ This how-to will show you how to synthesize a cluster.
 
 * `cluster-admin` permissions on the cluster to synthesize.
 * Write access in the Project Syn "Clusters" view on {portal-lieutenant-clusters}.
-* Access to the {synfra-cluster}.
+* Access to the {lieutenant-cluster}.
 * The Syn tenant of the cluster to synthesize exists already.
 If the tenant doesn't exist yet, see the documentation on xref:how-tos/create-tenant.adoc[creating a tenant].
 

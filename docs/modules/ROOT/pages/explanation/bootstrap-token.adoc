@@ -14,18 +14,17 @@ NOTE: We're planning to increase the life time of the bootstrap token from 30 mi
 
 == Checking the validity of the bootstrap token
 
-You can check the expiration date of the install URL by inspecting the cluster object on the {synfra-cluster}.
+You can check the expiration date of the install URL by inspecting the cluster object on the {lieutenant-cluster}.
 If you don't see a field `.status.bootstrapToken.tokenValid` the token has either been used or has expired.
 
 [source,bash]
 ----
 export CLUSTER_ID=<cluster id of cluster to synthesize>
-export KUBECONFIG=/path/to/synfra.kubeconfig
+export KUBECONFIG=/path/to/lieutenant.kubeconfig <1>
 
-export LIEUTENANT_NS=lieutenant-prod
-
-kubectl -n ${LIEUTENANT_NS} describe cluster ${CLUSTER_ID}
+kubectl -n lieutenant describe cluster ${CLUSTER_ID}
 ----
+<1> See {lieutenant-cluster}
 
 == Fetching the install URL from the Lieutenant API
 
@@ -33,10 +32,8 @@ If you need to, you can fetch the install URL from the Lieutenant API using the 
 
 [source,bash]
 ----
-export KUBECONFIG=/path/to/synfra.kubeconfig
 export LIEUTENANT_URL=api.syn.vshn.net
-export LIEUTENANT_TOKEN=$(kubectl config view -o jsonpath='{.users[?(@.name == "syn-synfra")].user.token}'  --raw)
-export LIEUTENANT_AUTH="Authorization:Bearer ${LIEUTENANT_TOKEN}"
+export LIEUTENANT_AUTH="Authorization:Bearer $(commodore fetch-token)"
 
 export INSTALL_URL=$(curl -H "${LIEUTENANT_AUTH}" "https://${LIEUTENANT_URL}/clusters/${CLUSTER_ID}" | jq -r ".installURL")
 ----
@@ -49,11 +46,9 @@ This can be helpful if you mistakenly fetched the install URL or if registration
 [source,bash]
 ----
 export CLUSTER_ID=<cluster id of cluster to synthesize>
-export KUBECONFIG=/path/to/synfra.kubeconfig
 
-export LIEUTENANT_NS=lieutenant-prod
-export LIEUTENANT_TOKEN=$(kubectl config view -o jsonpath='{.users[?(@.name == "syn-synfra")].user.token}'  --raw)
-export LIEUTENANT_AUTH="Authorization: Bearer ${LIEUTENANT_TOKEN}"
+export LIEUTENANT_NS=lieutenant
+export LIEUTENANT_AUTH="Authorization: Bearer $(commodore fetch-token)"
 
 curl -H "${LIEUTENANT_AUTH}" -H "Content-Type: application/json-patch+json" -X PATCH \
   -d '[{ "op": "remove", "path": "/status/bootstrapToken" }]' \
