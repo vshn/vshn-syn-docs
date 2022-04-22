@@ -8,9 +8,7 @@ When a new cluster is created, Lieutenant generates a bootstrap token and an ins
 The install URL can be used to install Steward on the cluster to synthesize.
 The bootstrap token is embedded into the install URL by Lieutenant.
 
-The bootstrap token and therefore the install URL are only valid once and are only valid for 30 minutes after creating the cluster in Lieutenant.
-
-NOTE: We're planning to increase the life time of the bootstrap token from 30 minutes to 24 hours, see Jira ticket https://ticket.vshn.net/browse/SYN-354[SYN-354].
+The bootstrap token and therefore the install URL are only valid once and are only valid for 24 hours after creating the cluster in Lieutenant.
 
 == Checking the validity of the bootstrap token
 
