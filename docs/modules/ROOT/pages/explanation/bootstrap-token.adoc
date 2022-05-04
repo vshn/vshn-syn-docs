@@ -45,10 +45,19 @@ This can be helpful if you mistakenly fetched the install URL or if registration
 ----
 export CLUSTER_ID=<cluster id of cluster to synthesize>
 
-export LIEUTENANT_NS=lieutenant
+export KUBECONFIG=<lieutenant vcluster kubeconfig> <1>
+export LIEUTENANT_INSTANCE=lieutenant-prod <2>
+export COMMODORE_API_URL=api.syn.vshn.net <3>
+
 export LIEUTENANT_AUTH="Authorization: Bearer $(commodore fetch-token)"
+export KUBE_API=$(yq ".clusters[] | select(.name == \"$LIEUTENANT_INSTANCE\")| .cluster.server" $KUBECONFIG)
 
 curl -H "${LIEUTENANT_AUTH}" -H "Content-Type: application/json-patch+json" -X PATCH \
   -d '[{ "op": "remove", "path": "/status/bootstrapToken" }]' \
-  "https://rancher.vshn.net/k8s/clusters/c-c6j2w/apis/syn.tools/v1alpha1/namespaces/${LIEUTENANT_NS}/clusters/${CLUSTER_ID}/status"
+  "${KUBE_API}/apis/syn.tools/v1alpha1/namespaces/lieutenant/clusters/${CLUSTER_ID}/status"
 ----
+<1> Select the Kubeconfig file for the Lieutenant instance on which the cluster is registered.
+<2> The value of this variable must match the value of the field `name` for the cluster's entry in `clusters` in the Kubeconfig file.
+The provided value assumes that you're using the Kubeconfig file provided in the xref:how-tos/connect-to-lieutenant-clusters.adoc[connect to Lieutenant clusters] how-to.
+<3> Adjust this to point to the correct Lieutenant API.
+This is required for `commodore fetch-token`.
